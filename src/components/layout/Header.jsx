@@ -1,25 +1,29 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext';
 
-const Header = () => {
-  const { cartItems } = useCart();
-  const itemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+const Header = ({ onCartClick }) => {
+  const { cartCount } = useCart();
 
   return (
     <header>
       <div className='header-brand'>
-        <h1 className='header-logo'>LEVE</h1>
-        <div className='header-tagline'>Timeless Essentials</div>
+        <span className='header-logo'>LEVE</span>
+        <span className='header-tagline'>Timeless Essentials</span>
       </div>
+
       <nav className='nav-menu'>
-        <a href='#' className='nav-link'>Home</a>
-        <a href='#' className='nav-link'>Collection</a>
-        <a href='#' className='nav-link'>About</a>
-        <a href='#' className='nav-link'>Journal</a>
-        <a href='#' className='nav-link'>Contact</a>
-        <a href='#' className='nav-link cart-link'>
-          🛒 <span className='cart-count'>{itemCount}</span>
-        </a>
+        <a className='nav-link' href='#'>Home</a>
+        <a className='nav-link' href='#collection'>Collection</a>
+        <a className='nav-link' href='#'>About</a>
+        <a className='nav-link' href='#'>Journal</a>
+        <a className='nav-link' href='#'>Contact</a>
+
+        <button className='cart-link' onClick={onCartClick} aria-label='Open cart'>
+          🛒
+          {cartCount > 0 && (
+            <span className='cart-count'>{cartCount}</span>
+          )}
+        </button>
       </nav>
     </header>
   );

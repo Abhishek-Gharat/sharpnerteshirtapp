@@ -1,9 +1,9 @@
 import React from 'react';
 
-const LoadingSpinner = () => {
-  return (
-    <div className='loading-spinner' aria-label='Loading'></div>
-  );
-};
+const LoadingSpinner = () => (
+  <div className='spinner-wrap'>
+    <div className='spinner'></div>
+  </div>
+);
 
 export default LoadingSpinner;

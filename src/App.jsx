@@ -1,85 +1,67 @@
-import React, { useEffect, useState } from 'react';
-import { CartProvider, useCart } from './context/CartContext';
+import React, { useEffect, useState, useRef } from 'react';
+import { CartProvider } from './context/CartContext';
 import { fetchProducts } from './data/products';
 import './App.css';
 
-// Layout components
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HeroSection from './components/layout/HeroSection';
-// Product components
 import ProductsSection from './components/products/ProductsSection';
-// Cart components
 import CartSection from './components/cart/CartSection';
-// UI components
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import ErrorState from './components/ui/ErrorState';
 
-function App() {
+function AppContent() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showCart, setShowCart] = useState(false);
+  const cartRef = useRef(null);
 
   useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-        const fetchedProducts = await fetchProducts();
-        setProducts(fetchedProducts);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load collection. Please try again later.');
-        console.error('Error loading products:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
+    fetchProducts()
+      .then(data => { setProducts(data); setLoading(false); })
+      .catch(() => { setError('Failed to load collection. Please try again.'); setLoading(false); });
   }, []);
 
-  if (loading) {
-    return (
-      <CartProvider>
-        <div className='app'>
-          <Header />
-          <main>
-            <HeroSection />
-            <div className='loading-state'>
-              <LoadingSpinner />
-              <p className='loading-message'>Curating your timeless collection...</p>
-            </div>
-          </main>
-          <Footer />
-        </div>
-      </CartProvider>
-    );
-  }
+  const handleCartClick = () => {
+    setShowCart(prev => !prev);
+    setTimeout(() => cartRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+  };
 
-  if (error) {
-    return (
-      <CartProvider>
-        <div className='app'>
-          <Header />
-          <main>
-            <ErrorState error={error} onRetry={() => window.location.reload()} />
-          </main>
-          <Footer />
-        </div>
-      </CartProvider>
-    );
-  }
+  if (loading) return (
+    <div className='app'>
+      <Header onCartClick={handleCartClick} />
+      <main><HeroSection /><div className='loading-state'><LoadingSpinner /><p className='loading-message'>Curating your timeless collection...</p></div></main>
+      <Footer />
+    </div>
+  );
+
+  if (error) return (
+    <div className='app'>
+      <Header onCartClick={handleCartClick} />
+      <main><ErrorState error={error} onRetry={() => window.location.reload()} /></main>
+      <Footer />
+    </div>
+  );
 
   return (
+    <div className='app'>
+      <Header onCartClick={handleCartClick} />
+      <main>
+        <HeroSection />
+        <ProductsSection products={products} />
+        {showCart && <div ref={cartRef}><CartSection /></div>}
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function App() {
+  return (
     <CartProvider>
-      <div className='app'>
-        <Header />
-        <main>
-          <ProductsSection products={products} />
-          <CartSection />
-        </main>
-        <Footer />
-      </div>
+      <AppContent />
     </CartProvider>
   );
 }
