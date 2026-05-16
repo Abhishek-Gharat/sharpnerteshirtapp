@@ -1,8 +1,9 @@
 import React from 'react';
-import { useCart } from '../../context/CartContext';
+import { useDispatch } from 'react-redux';
+import { addToCart } from '../../redux/cartSlice';
 
 const ProductCard = ({ product }) => {
-  const { addToCart } = useCart();
+  const dispatch = useDispatch();
 
   const getBadge = () => {
     if (product.price < 20) return 'Essential';
@@ -12,6 +13,10 @@ const ProductCard = ({ product }) => {
   };
 
   const badge = getBadge();
+
+  const handleAddToCart = () => {
+    dispatch(addToCart(product));
+  };
 
   return (
     <article className='product-card'>
@@ -39,7 +44,7 @@ const ProductCard = ({ product }) => {
             <span className='attribute-tag'>{product.colors?.[0]}</span>
           </div>
           <p className='product-price'>${product.price.toFixed(2)}</p>
-          <button className='add-to-cart-btn' onClick={() => addToCart(product)}>
+          <button className='add-to-cart-btn' onClick={handleAddToCart}>
             Add to Cart
           </button>
         </div>

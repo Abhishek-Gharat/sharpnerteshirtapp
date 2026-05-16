@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { selectIsCartVisible } from './redux/cartSlice';
-import { CartProvider } from './context/CartContext';
 import { fetchProducts } from './data/products';
 import './App.css';
 
@@ -13,7 +12,7 @@ import CartSection from './components/cart/CartSection';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import ErrorState from './components/ui/ErrorState';
 
-function AppContent() {
+function App() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,14 +58,6 @@ function AppContent() {
       </main>
       <Footer />
     </div>
-  );
-}
-
-function App() {
-  return (
-    <CartProvider>
-      <AppContent />
-    </CartProvider>
   );
 }
 
