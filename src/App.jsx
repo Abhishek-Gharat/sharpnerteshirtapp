@@ -1,10 +1,12 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   selectIsCartVisible, 
   selectCartItems, 
   selectCartCount,
-  sendCartData 
+  selectIsInitialLoad,
+  sendCartData,
+  loadCartData
 } from './redux/cartSlice';
 import { showNotification, hideNotification } from './redux/uiSlice';
 import { fetchProducts } from './data/products';
@@ -19,9 +21,6 @@ import LoadingSpinner from './components/ui/LoadingSpinner';
 import ErrorState from './components/ui/ErrorState';
 import Notification from './components/ui/Notification';
 
-// Flag to prevent initial cart send on mount
-let isInitial = true;
-
 function App() {
   const dispatch = useDispatch();
   const [products, setProducts] = useState([]);
@@ -30,7 +29,13 @@ function App() {
   const showCart = useSelector(selectIsCartVisible);
   const cartItems = useSelector(selectCartItems);
   const cartCount = useSelector(selectCartCount);
+  const isInitialLoad = useSelector(selectIsInitialLoad);
   const cartRef = useRef(null);
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    dispatch(loadCartData());
+  }, [dispatch]);
 
   // Fetch products on mount
   useEffect(() => {
@@ -46,10 +51,9 @@ function App() {
     }
   }, [showCart]);
 
-  // Send cart data to backend whenever cart changes
+  // Send cart data to backend whenever cart changes (after initial load)
   useEffect(() => {
-    if (isInitial) {
-      isInitial = false;
+    if (isInitialLoad) {
       return;
     }
 
@@ -58,7 +62,7 @@ function App() {
       dispatch(showNotification({
         status: 'pending',
         title: 'Sending...',
-        message: 'Sending cart data to server!'
+        message: 'Sending cart data!'
       }));
 
       try {
@@ -71,7 +75,7 @@ function App() {
         dispatch(showNotification({
           status: 'success',
           title: 'Success!',
-          message: 'Sent cart data successfully!'
+          message: 'Cart data saved successfully!'
         }));
 
         // Auto-hide after 3 seconds
@@ -83,7 +87,7 @@ function App() {
         dispatch(showNotification({
           status: 'error',
           title: 'Error!',
-          message: 'Sending cart data failed!'
+          message: 'Failed to save cart data!'
         }));
 
         // Auto-hide after 3 seconds
@@ -94,7 +98,7 @@ function App() {
     };
 
     sendCart();
-  }, [cartItems, cartCount, dispatch]);
+  }, [cartItems, cartCount, dispatch, isInitialLoad]);
 
   if (loading) return (
     <div className='app'>

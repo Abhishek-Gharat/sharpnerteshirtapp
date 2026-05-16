@@ -1,22 +1,26 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import CRUDCrudService from '../services/crudcrudService';
 
-// Async thunk to send cart data to backend
+// Async thunk to send cart data to backend (localStorage)
 export const sendCartData = createAsyncThunk(
   'cart/sendCartData',
   async (cartData, { rejectWithValue }) => {
     try {
-      // Using a generic cart endpoint - in real app this would be your backend API
-      const response = await fetch('https://crudcrud.com/api/349c8d078e4849b7b0847c5fb8d3b4a7/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cartData.items, totalQuantity: cartData.totalQuantity }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to send cart data');
-      }
-      
-      return await response.json();
+      const result = await CRUDCrudService.saveCart(cartData);
+      return result;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// Async thunk to load cart data from backend (localStorage)
+export const loadCartData = createAsyncThunk(
+  'cart/loadCartData',
+  async (_, { rejectWithValue }) => {
+    try {
+      const cartData = await CRUDCrudService.loadCart();
+      return cartData;
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -28,6 +32,7 @@ const initialState = {
   cartItems: [],
   isLoading: false,
   error: null,
+  isInitialLoad: true,
 };
 
 const cartSlice = createSlice({
@@ -85,6 +90,16 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.cartItems = [];
     },
+    
+    // Set cart items (for loading from storage)
+    setCartItems: (state, action) => {
+      state.cartItems = action.payload;
+    },
+    
+    // Mark initial load complete
+    setInitialLoadComplete: (state) => {
+      state.isInitialLoad = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -98,6 +113,22 @@ const cartSlice = createSlice({
       .addCase(sendCartData.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload;
+      })
+      .addCase(loadCartData.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(loadCartData.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload && action.payload.items) {
+          state.cartItems = action.payload.items;
+        }
+        state.isInitialLoad = false;
+      })
+      .addCase(loadCartData.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload;
+        state.isInitialLoad = false;
       });
   },
 });
@@ -111,6 +142,8 @@ export const {
   removeFromCart,
   updateQuantity,
   clearCart,
+  setCartItems,
+  setInitialLoadComplete,
 } = cartSlice.actions;
 
 // Export selectors
@@ -122,5 +155,6 @@ export const selectCartTotal = (state) =>
   state.cart.cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 export const selectCartLoading = (state) => state.cart.isLoading;
 export const selectCartError = (state) => state.cart.error;
+export const selectIsInitialLoad = (state) => state.cart.isInitialLoad;
 
 export default cartSlice.reducer;
