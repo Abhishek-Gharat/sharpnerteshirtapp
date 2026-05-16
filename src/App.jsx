@@ -34,45 +34,36 @@ function App() {
   const cartLoading = useSelector(selectCartLoading);
   const cartRef = useRef(null);
 
-  // Load cart from localStorage on mount with notifications
+  // Load cart from backend on mount
   useEffect(() => {
     const loadCart = async () => {
-      // Show loading notification
-      dispatch(showNotification({
-        status: 'pending',
-        title: 'Loading...',
-        message: 'Fetching cart data!'
-      }));
-
-      try {
-        const result = await dispatch(loadCartData()).unwrap();
-        
-        // Show success notification
+      // Dispatch loadCartData thunk created with createAsyncThunk
+      const resultAction = await dispatch(loadCartData());
+      
+      // Check if the thunk was fulfilled or rejected
+      if (loadCartData.fulfilled.match(resultAction)) {
+        // Success - show success notification
+        const data = resultAction.payload;
         dispatch(showNotification({
           status: 'success',
           title: 'Success!',
-          message: result.items?.length > 0 
-            ? `Loaded ${result.items.length} items from cart!` 
+          message: data.items?.length > 0 
+            ? `Loaded ${data.items.length} items from cart!` 
             : 'Cart is empty!'
         }));
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          dispatch(hideNotification());
-        }, 3000);
-      } catch (error) {
-        // Show error notification
+      } else if (loadCartData.rejected.match(resultAction)) {
+        // Error - show error notification
         dispatch(showNotification({
           status: 'error',
           title: 'Error!',
-          message: 'Failed to fetch cart data!'
+          message: resultAction.payload || 'Failed to fetch cart data!'
         }));
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          dispatch(hideNotification());
-        }, 3000);
       }
+
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        dispatch(hideNotification());
+      }, 3000);
     };
 
     loadCart();
@@ -106,36 +97,33 @@ function App() {
         message: 'Sending cart data!'
       }));
 
-      try {
-        await dispatch(sendCartData({
-          items: cartItems,
-          totalQuantity: cartCount
-        })).unwrap();
+      // Dispatch sendCartData thunk created with createAsyncThunk
+      const resultAction = await dispatch(sendCartData({
+        items: cartItems,
+        totalQuantity: cartCount
+      }));
 
-        // Show success notification
+      // Check if the thunk was fulfilled or rejected
+      if (sendCartData.fulfilled.match(resultAction)) {
+        // Success
         dispatch(showNotification({
           status: 'success',
           title: 'Success!',
           message: 'Cart data saved successfully!'
         }));
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          dispatch(hideNotification());
-        }, 3000);
-      } catch (error) {
-        // Show error notification
+      } else if (sendCartData.rejected.match(resultAction)) {
+        // Error - use the custom error from rejectWithValue
         dispatch(showNotification({
           status: 'error',
           title: 'Error!',
-          message: 'Failed to save cart data!'
+          message: resultAction.payload || 'Failed to save cart data!'
         }));
-
-        // Auto-hide after 3 seconds
-        setTimeout(() => {
-          dispatch(hideNotification());
-        }, 3000);
       }
+
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        dispatch(hideNotification());
+      }, 3000);
     };
 
     sendCart();

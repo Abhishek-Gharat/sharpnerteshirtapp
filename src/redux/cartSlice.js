@@ -2,31 +2,34 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 const CART_STORAGE_KEY = 'tshirt_cart';
 
-// Async thunk to send cart data to backend (localStorage for now due to CORS)
+// Create async thunk for sending cart data
+// This replaces the manual thunk with createAsyncThunk
 export const sendCartData = createAsyncThunk(
   'cart/sendCartData',
   async (cartData, { rejectWithValue }) => {
     try {
-      // Simulate API call with localStorage
-      // In a real scenario, this would be: await fetch('/api/cart', { method: 'PUT', body: JSON.stringify(cartData) })
+      // Simulate sending to Firebase/backend
+      // In real scenario: await fetch('firebase-url', { method: 'PUT', body: JSON.stringify(cartData) })
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      return { success: true };
+      return cartData;
     } catch (error) {
-      return rejectWithValue(error.message);
+      // Use rejectWithValue to return custom error payload
+      return rejectWithValue(error.message || 'Failed to send cart data');
     }
   }
 );
 
-// Async thunk to load cart data from backend (localStorage)
+// Create async thunk for loading cart data
 export const loadCartData = createAsyncThunk(
   'cart/loadCartData',
   async (_, { rejectWithValue }) => {
     try {
-      // Simulate API call with localStorage
+      // Simulate fetching from Firebase/backend
+      // In real scenario: const response = await fetch('firebase-url'); return response.json();
       const stored = localStorage.getItem(CART_STORAGE_KEY);
       const cartData = stored ? JSON.parse(stored) : { items: [], totalQuantity: 0 };
       
@@ -35,7 +38,7 @@ export const loadCartData = createAsyncThunk(
       
       return cartData;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error.message || 'Failed to load cart data');
     }
   }
 );
@@ -69,10 +72,8 @@ const cartSlice = createSlice({
       const existingItem = state.cartItems.find(item => item.id === product.id);
       
       if (existingItem) {
-        // If item exists, increase quantity
         existingItem.quantity += 1;
       } else {
-        // If item doesn't exist, add with quantity 1
         state.cartItems.push({ ...product, quantity: 1 });
       }
     },
@@ -90,10 +91,8 @@ const cartSlice = createSlice({
       
       if (item) {
         if (quantity <= 0) {
-          // Remove item if quantity becomes 0 or less
           state.cartItems = state.cartItems.filter(item => item.id !== productId);
         } else {
-          // Update quantity
           item.quantity = quantity;
         }
       }
@@ -104,23 +103,34 @@ const cartSlice = createSlice({
       state.cartItems = [];
     },
   },
+  // Handle async thunk results here
   extraReducers: (builder) => {
+    // Send Cart Data cases
     builder
+      // Pending: API call is in progress
       .addCase(sendCartData.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(sendCartData.fulfilled, (state) => {
+      // Fulfilled: API call succeeded
+      .addCase(sendCartData.fulfilled, (state, action) => {
         state.isLoading = false;
+        // Cart data is already in state, just mark as saved
       })
+      // Rejected: API call failed
       .addCase(sendCartData.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
-      })
+        state.error = action.payload; // Custom error from rejectWithValue
+      });
+    
+    // Load Cart Data cases
+    builder
+      // Pending: Loading from backend
       .addCase(loadCartData.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
+      // Fulfilled: Cart loaded successfully
       .addCase(loadCartData.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload && action.payload.items) {
@@ -128,9 +138,10 @@ const cartSlice = createSlice({
         }
         state.isInitialLoad = false;
       })
+      // Rejected: Failed to load cart
       .addCase(loadCartData.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload; // Custom error from rejectWithValue
         state.isInitialLoad = false;
       });
   },
