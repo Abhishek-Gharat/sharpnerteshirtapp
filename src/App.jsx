@@ -5,6 +5,7 @@ import {
   selectCartItems, 
   selectCartCount,
   selectIsInitialLoad,
+  selectCartLoading,
   sendCartData,
   loadCartData
 } from './redux/cartSlice';
@@ -30,11 +31,51 @@ function App() {
   const cartItems = useSelector(selectCartItems);
   const cartCount = useSelector(selectCartCount);
   const isInitialLoad = useSelector(selectIsInitialLoad);
+  const cartLoading = useSelector(selectCartLoading);
   const cartRef = useRef(null);
 
-  // Load cart from localStorage on mount
+  // Load cart from localStorage on mount with notifications
   useEffect(() => {
-    dispatch(loadCartData());
+    const loadCart = async () => {
+      // Show loading notification
+      dispatch(showNotification({
+        status: 'pending',
+        title: 'Loading...',
+        message: 'Fetching cart data!'
+      }));
+
+      try {
+        const result = await dispatch(loadCartData()).unwrap();
+        
+        // Show success notification
+        dispatch(showNotification({
+          status: 'success',
+          title: 'Success!',
+          message: result.items?.length > 0 
+            ? `Loaded ${result.items.length} items from cart!` 
+            : 'Cart is empty!'
+        }));
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          dispatch(hideNotification());
+        }, 3000);
+      } catch (error) {
+        // Show error notification
+        dispatch(showNotification({
+          status: 'error',
+          title: 'Error!',
+          message: 'Failed to fetch cart data!'
+        }));
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          dispatch(hideNotification());
+        }, 3000);
+      }
+    };
+
+    loadCart();
   }, [dispatch]);
 
   // Fetch products on mount
