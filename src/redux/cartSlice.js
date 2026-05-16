@@ -1,13 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import CRUDCrudService from '../services/crudcrudService';
 
-// Async thunk to send cart data to backend (localStorage)
+const CART_STORAGE_KEY = 'tshirt_cart';
+
+// Async thunk to send cart data to backend (localStorage for now due to CORS)
 export const sendCartData = createAsyncThunk(
   'cart/sendCartData',
   async (cartData, { rejectWithValue }) => {
     try {
-      const result = await CRUDCrudService.saveCart(cartData);
-      return result;
+      // Simulate API call with localStorage
+      // In a real scenario, this would be: await fetch('/api/cart', { method: 'PUT', body: JSON.stringify(cartData) })
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return { success: true };
     } catch (error) {
       return rejectWithValue(error.message);
     }
@@ -19,7 +26,13 @@ export const loadCartData = createAsyncThunk(
   'cart/loadCartData',
   async (_, { rejectWithValue }) => {
     try {
-      const cartData = await CRUDCrudService.loadCart();
+      // Simulate API call with localStorage
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      const cartData = stored ? JSON.parse(stored) : { items: [], totalQuantity: 0 };
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       return cartData;
     } catch (error) {
       return rejectWithValue(error.message);
@@ -90,16 +103,6 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.cartItems = [];
     },
-    
-    // Set cart items (for loading from storage)
-    setCartItems: (state, action) => {
-      state.cartItems = action.payload;
-    },
-    
-    // Mark initial load complete
-    setInitialLoadComplete: (state) => {
-      state.isInitialLoad = false;
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -142,8 +145,6 @@ export const {
   removeFromCart,
   updateQuantity,
   clearCart,
-  setCartItems,
-  setInitialLoadComplete,
 } = cartSlice.actions;
 
 // Export selectors
