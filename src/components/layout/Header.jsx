@@ -1,8 +1,15 @@
 import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { toggleCartVisibility } from '../../redux/cartSlice';
 import { useCart } from '../../context/CartContext';
 
-const Header = ({ onCartClick }) => {
+const Header = () => {
+  const dispatch = useDispatch();
   const { cartCount } = useCart();
+
+  const handleCartClick = () => {
+    dispatch(toggleCartVisibility());
+  };
 
   return (
     <header>
@@ -18,7 +25,7 @@ const Header = ({ onCartClick }) => {
         <a className='nav-link' href='#'>Journal</a>
         <a className='nav-link' href='#'>Contact</a>
 
-        <button className='cart-link' onClick={onCartClick} aria-label='Open cart'>
+        <button className='cart-link' onClick={handleCartClick} aria-label='Open cart'>
           🛒
           {cartCount > 0 && (
             <span className='cart-count'>{cartCount}</span>

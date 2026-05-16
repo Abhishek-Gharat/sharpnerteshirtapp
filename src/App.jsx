@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { selectIsCartVisible } from './redux/cartSlice';
 import { CartProvider } from './context/CartContext';
 import { fetchProducts } from './data/products';
 import './App.css';
@@ -15,7 +17,7 @@ function AppContent() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCart, setShowCart] = useState(false);
+  const showCart = useSelector(selectIsCartVisible);
   const cartRef = useRef(null);
 
   useEffect(() => {
@@ -24,14 +26,16 @@ function AppContent() {
       .catch(() => { setError('Failed to load collection. Please try again.'); setLoading(false); });
   }, []);
 
-  const handleCartClick = () => {
-    setShowCart(prev => !prev);
-    setTimeout(() => cartRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
-  };
+  // Scroll to cart when it becomes visible
+  useEffect(() => {
+    if (showCart && cartRef.current) {
+      cartRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [showCart]);
 
   if (loading) return (
     <div className='app'>
-      <Header onCartClick={handleCartClick} />
+      <Header />
       <main><HeroSection /><div className='loading-state'><LoadingSpinner /><p className='loading-message'>Curating your timeless collection...</p></div></main>
       <Footer />
     </div>
@@ -39,7 +43,7 @@ function AppContent() {
 
   if (error) return (
     <div className='app'>
-      <Header onCartClick={handleCartClick} />
+      <Header />
       <main><ErrorState error={error} onRetry={() => window.location.reload()} /></main>
       <Footer />
     </div>
@@ -47,7 +51,7 @@ function AppContent() {
 
   return (
     <div className='app'>
-      <Header onCartClick={handleCartClick} />
+      <Header />
       <main>
         <HeroSection />
         <ProductsSection products={products} />
