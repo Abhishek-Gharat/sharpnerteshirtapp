@@ -21,12 +21,14 @@ import CartSection from './components/cart/CartSection';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 import ErrorState from './components/ui/ErrorState';
 import Notification from './components/ui/Notification';
+import StyleAdvisor from './components/ai/StyleAdvisor';
 
 function App() {
   const dispatch = useDispatch();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAdvisor, setShowAdvisor] = useState(false);
   const showCart = useSelector(selectIsCartVisible);
   const cartItems = useSelector(selectCartItems);
   const cartCount = useSelector(selectCartCount);
@@ -155,6 +157,24 @@ function App() {
         {showCart && <div ref={cartRef}><CartSection /></div>}
       </main>
       <Footer />
+      
+      {/* AI Style Advisor Chat */}
+      <StyleAdvisor
+        products={products}
+        isOpen={showAdvisor}
+        onClose={() => setShowAdvisor(false)}
+      />
+      
+      {/* Floating Chat Button */}
+      {!showAdvisor && (
+        <button 
+          className="style-advisor-minimized"
+          onClick={() => setShowAdvisor(true)}
+        >
+          <span className="advisor-icon">💬</span>
+          <span className="advisor-text">Style Advisor</span>
+        </button>
+      )}
     </div>
   );
 }
